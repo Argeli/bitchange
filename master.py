@@ -33,8 +33,8 @@ class Agent:
         self.state = "shut down"  #Other states : "sleeping" (only listening) and "awake" (listening, trading and sending updates)
         
         #Set-up loggers
-        self.error_log = setup_logger("Error logger", PATH + '\\error_log.txt', logging.ERROR)
-        self.trade_log = setup_logger("Trade logger", PATH + '\\trade_log.txt', logging.INFO)
+        self.error_log = setup_logger("Error logger", PATH + '/error_log.txt', logging.ERROR)
+        self.trade_log = setup_logger("Trade logger", PATH + '/trade_log.txt', logging.INFO)
         
         self.listening_thread = None
         self.sending_thread = None
@@ -190,8 +190,8 @@ class Agent:
             self.trade_log.handlers[0].close()
             now = datetime.datetime.now().strftime("%H%M%S_%d%m%y")
             runtime = time.strftime("%H%M%S", time.gmtime(time.time() - self.trader.grid_start_time))
-            os.rename(PATH + '\\trade_log.txt',
-                      PATH + f'\\trade_log_{self.trader.market_ident}_closed_on_{now}'.replace("/", "-")
+            os.rename(PATH + '/trade_log.txt',
+                      PATH + f'/trade_log_{self.trader.market_ident}_closed_on_{now}'.replace("/", "-")
                       + f'_ran_for_{runtime}.txt')
             
         except Exception as e:
