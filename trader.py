@@ -200,7 +200,7 @@ class Trader:
         proj_null_total = self.balance[self.market_split[0]] * self.grid_center + self.balance[self.market_split[1]]       \
             - self.amnt_incr * self.grid_center * self.grid_range                                                          \
             * (grid_pos - 1) * grid_pos / (2 * self.grid_count)
-        print(grid_pos)
+
         proj_null = (proj_null_total - self.balance_init['Total (quote)'])                                                 \
             / self.balance_init['Total (quote)']
         proj_null = float(round(100 * proj_null, 2))
