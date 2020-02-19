@@ -5,9 +5,10 @@ import time
 import datetime
 from matplotlib import pyplot as plt
 
-from Logger import setup_logger
+from logger import setup_logger
 import trader
 import speaker
+import keys
 
 PATH = os.path.dirname(__file__)
 
@@ -20,8 +21,14 @@ class Agent:
     def __init__(self, name):
         
         self.name = name
+
         self.trader = trader.Trader()
         self.speaker = speaker.Speaker()
+
+        self.trader.binance_public = keys.binance_public
+        self.trader.binance_private = keys.binance_private
+        self.speaker.tele_token = keys.telegram_token
+        self.speaker.tele_chatid = keys.telegram_chatid
             
         self.state = "shut down"  #Other states : "sleeping" (only listening) and "awake" (listening, trading and sending updates)
         

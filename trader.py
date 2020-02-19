@@ -1,7 +1,7 @@
 import time
 import ccxt
 import math
-import keys
+
 #import ccxt.async_support as ccxt
 
 class Trader:
@@ -9,10 +9,10 @@ class Trader:
 
     def __init__(self):
         """Catalogue of params"""
-        self.kraken_public = keys.kraken_public
-        self.kraken_private = keys.kraken_private
-        self.binance_public = keys.binance_public
-        self.binance_private = keys.binance_private
+        self.kraken_public = ""
+        self.kraken_private = ""
+        self.binance_public = ""
+        self.binance_private = ""
 
         self.exchange = {}
         self.market = {}
@@ -65,7 +65,6 @@ class Trader:
             'secret': self.binance_private,
             'enableRateLimit': True                 #ccxt internal limit failsafe for avoiding ban on exchange
         })
-
         self.exchange.load_markets()
         self.market = self.exchange.markets[self.market_ident]
 
@@ -196,12 +195,13 @@ class Trader:
         position = (self.last_order - self.grid_center) / (self.grid_center * self.grid_range)
         position = float(round(100 * position, 2))
 
-        grid_pos =  int(self.grid_count * abs(self.latest_value - self.grid_center)                 \
+        grid_pos =  int(self.grid_count * abs(self.latest_value - self.grid_center)
                          / (2 * self.grid_range * self.grid_center))
-        proj_null_total = self.balance['Total (quote)'] * self.grid_center / self.latest_value      \
-            + (grid_pos - 1) * self.amnt_incr * self.grid_center                                    \
-            * grid_pos * self.grid_range / (2 * self.grid_count)
-        proj_null = (proj_null_total - self.balance_init['Total (quote)'])                          \
+        proj_null_total = self.balance[self.market_split[0]] * self.grid_center + self.balance[self.market_split[1]]       \
+            - self.amnt_incr * self.grid_center * self.grid_range                                                          \
+            * (grid_pos - 1) * grid_pos / (2 * self.grid_count)
+        print(grid_pos)
+        proj_null = (proj_null_total - self.balance_init['Total (quote)'])                                                 \
             / self.balance_init['Total (quote)']
         proj_null = float(round(100 * proj_null, 2))
         
@@ -211,7 +211,7 @@ class Trader:
                     + "\nOrder: " + ['buy', 'sell'][value_increased] + f" {sane_amount}"
                     + f" of {self.market_ident} for {sane_price}"
                     + f"\nJumps: {grid_jumps} | Position: {position}%"
-                    + f"\nAbsolute total return: {tot_evol}%"
+                    + f"\nAbsolute return: {tot_evol}%"
                     + f"| Projected: stable {proj_null}% bad ")
 
         return order_data
