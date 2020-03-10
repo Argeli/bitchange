@@ -204,7 +204,7 @@ class Trader:
         proj_null = (proj_null_total - self.balance_init['Total (quote)'])                                                 \
             / self.balance_init['Total (quote)']
         proj_null = float(round(100 * proj_null, 2))
-        
+
         order_data = ("---Last Trading Round---\n" + "Wallet is: " + str(self.tidy_balance)
                     + f"\nGrid number: {self.grid_nb} | Time: "
                     + time.strftime("%H:%M:%S", time.gmtime(time.time() - self.grid_start_time))

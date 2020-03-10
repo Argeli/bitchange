@@ -1,3 +1,5 @@
+"""Packages (install) needed are: matplotlib ccxt"""
+
 import threading
 import os
 import logging
@@ -10,16 +12,20 @@ import trader
 import speaker
 import keys
 
-PATH = os.path.dirname(__file__)
+PATH = os.path.dirname(os.path.abspath(__file__))
 
-#define main agent class. Speaker and Trader classes (see other files) are attributes of master
+# define main agent class. Speaker and Trader classes (see other files) are
+# attributes of master
+
+
 class Agent:
     """The Agent carries all information for Telegramm and trading apis.
     This File contains all general parameters and methods.
-    3 threads run for trading (over ccxt), message sending and message receiving (over Telegram)"""
-    
+    3 threads run for trading (over ccxt), message sending and message
+    receiving (over Telegram)"""
+
     def __init__(self, name):
-        
+
         self.name = name
 
         self.trader = trader.Trader()
@@ -29,13 +35,13 @@ class Agent:
         self.trader.binance_private = keys.binance_private
         self.speaker.tele_token = keys.telegram_token
         self.speaker.tele_chatid = keys.telegram_chatid
-            
+
         self.state = "shut down"  #Other states : "sleeping" (only listening) and "awake" (listening, trading and sending updates)
-        
+
         #Set-up loggers
         self.error_log = setup_logger("Error logger", PATH + '/error_log.txt', logging.ERROR)
         self.trade_log = setup_logger("Trade logger", PATH + '/trade_log.txt', logging.INFO)
-        
+
         self.listening_thread = None
         self.sending_thread = None
         self.trading_thread = None
@@ -45,7 +51,7 @@ class Agent:
         self.verbose = True
         self.show_too_low = False
 
-        
+
         self.commands = {'Go sleep' : self.go_sleep,
                'Wake up!': self.wake_up,
                'Shutdown': self.shut_down,
@@ -69,17 +75,17 @@ class Agent:
     def wake_up(self):
         """Wake up agent / set up and buy into grid / start trading and automatic non-verbose update"""
         self.short_send("Waking up..")
-        
+
         if self.sending_thread != None and self.sending_thread.is_alive():      #Sending thread can stay alive whuile sleeping because of long time.sleep in loop
             self.sending = True
         else:
             self.sending_thread = threading.Thread(None, self.sending_loop, "Sending Thread")
             self.sending_thread.start()
-            
+
         self.trading_thread = threading.Thread(None, self.trading_loop, "Trading Thread")
         self.trading_thread.start()
         self.state = "awake"
-        
+
 
     def trading_loop(self):
         """Trade on exchange using ccxt, sleep is in self.trade()
@@ -93,17 +99,17 @@ class Agent:
         while self.trading:
             try:
                 self.trader.trade()
-                
-                if self.trader.traded:    
-                    self.trade_log.info(self.trader.order_data + "\n-Order data:-\n" + str(self.trader.order)) 
-                    if self.verbose: self.short_send(self.trader.order_data)  
-                    
+
+                if self.trader.traded:
+                    self.trade_log.info(self.trader.order_data + "\n-Order data:-\n" + str(self.trader.order))
+                    if self.verbose: self.short_send(self.trader.order_data)
+
                 elif self.trader.stoploss or self.trader.top_exit:
                     self.go_sleep("---Shutting down due to grid exit---")
-                    
+
                 elif self.show_too_low:
                     self.short_send(self.trader.too_low_data)
-                    
+
             except Exception as e:
                 self.error_log.error(f"Error while trading with exchange api:\n{e}\n")
                 self.go_sleep("Error while trading.")
@@ -116,21 +122,21 @@ class Agent:
         while self.listening:
             try:
                 answer = self.speaker.listen()
-                
+
                 if self.speaker.received:
-                    
+
                     try:
-                        if self.speaker.to_exe: 
+                        if self.speaker.to_exe:
                             self.commands[self.speaker.msg]()
-                            
+
                         else:
                             value = eval(self.name + f".{self.speaker.msg}")
                             self.short_send(self.name + f".{self.speaker.msg} = {value}")
-                            
+
                     except Exception as e:
                         if e == f"'{self.speaker.msg}'": e = ""         #Don't show e if it's a mispell in msg
                         self.short_send(f"You're miserable")
-                                         
+
             except Exception as e:
                 self.error_log.error(f"Error while getting updates from Telegram bot:\n{e}\
                                      \nTelegram request returned:\n{answer}\n")
@@ -149,16 +155,16 @@ class Agent:
     def set_show_too_low(self):
         self.short_send("Understood")
         self.show_too_low = not(self.show_too_low)
-    
-    
+
+
     def last_trade(self):
         self.short_send(self.trader.order_data)
-        
+
 
     def set_verbose(self):
         self.short_send("Understood")
         self.verbose = not(self.verbose)
-        
+
     def short_send(self, msg):
         try:
             self.speaker.send(msg)
@@ -168,7 +174,7 @@ class Agent:
 
     def get_state(self):
         self.short_send("I'm " + self.state)
-        self.short_send("""Do you want me to : 
+        self.short_send("""Do you want me to :
                   Go sleep,\
                   Wake up!,\
                   Shutdown,\
@@ -177,23 +183,23 @@ class Agent:
                   Get <attribute>,\
                   Last trade or\
                   Be quiet (verbose) ?""")
-                  
-                  
+
+
     def buy_out(self):
         """Buy out of grid"""
         try:
             self.trader.buy_in_out("out")
-            self.trade_log.info(self.trader.order_data + "\n-Order data:-\n" + str(self.trader.order)) 
-            self.short_send(self.trader.order_data) 
-            
+            self.trade_log.info(self.trader.order_data + "\n-Order data:-\n" + str(self.trader.order))
+            self.short_send(self.trader.order_data)
+
             #package trade_log of last grid
             self.trade_log.handlers[0].close()
             now = datetime.datetime.now().strftime("%H%M%S_%d%m%y")
             runtime = time.strftime("%H%M%S", time.gmtime(time.time() - self.trader.grid_start_time))
             os.rename(PATH + '/trade_log.txt',
-                      PATH + f'/trade_log_{self.trader.market_ident}_closed_on_{now}'.replace("/", "-")
+                      PATH + f'/trade_log_{self.trader.market_ident.replace("/", "_")}_closed_on_{now}'
                       + f'_ran_for_{runtime}.txt')
-            
+
         except Exception as e:
             self.error_log.error(f"Error with exchange api while trying to buy out:\n{e}\n")
 
@@ -242,9 +248,9 @@ def session_analysis(filename):
     subplot2 = subplot1.twinx()
     subplot2.plot(time_list[start:], price_list[start:], 'r')
     plt.show()
-#session_analysis('trade_log5')            
-    
-    
+#session_analysis('trade_log5')
+
+
 if __name__ == '__main__':
     smith = Agent("smith")
     smith.set_up()
